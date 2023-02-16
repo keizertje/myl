@@ -11,21 +11,15 @@ def set_last(text):
     last = text
 
 
-def set_master(new_master):
-    global master
-    master = new_master
-
-
 def output(a):
+    global last
     global master
     global root
     if root is not None:
         root.destroy()
-    global last
     root = Toplevel(master)
-    root.geometry(f"420x400+{root.winfo_screenwidth() - 431}+{root.winfo_screenheight() - 456}")
+    root.geometry(f"420x400+{root.winfo_screenwidth() - 411}+{root.winfo_screenheight() - 456}")
     text = ScrolledText(root)
-    text.insert("end-1c", a)
-    text.config(state="disabled", background="#eee")
     text.pack(expand=True, fill="both")
+    text.insert("insert", a)
     exec(last)

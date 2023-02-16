@@ -1,28 +1,15 @@
-import traceback
-import sys
-from output import output, set_last
-from files import openfile
-from alert import alert
+import subprocess as sp
+import threading as th
+import files
+
+master = None
 
 
-class Execute:
-    def __init__(self, name):
-        self.input = openfile(name)[0]
-        self.compile()
 
-    def compile(self):
-        if "tkinter" in self.input:
-            if alert("This IDE is made with tkinter, do all your widgets have a master specified?", button_a_msg="yes", button_b_msg="no") == "yes":
-                self.do()
-        else:
-            self.do()
-
-    def do(self):
-        sys.stdout.write = output
-        try:
-            set_last("")
-            exec(self.input)
-        except Exception:
-            set_last("text.config(foreground='red')")
-            error = traceback.format_exc()
-            output(error)
+def Execute(name):
+    global master
+    master.del_cons()
+    p = sp.Popen(["C:/Users/Gebruiker/AppData/Local/Programs/Python/Python39/python.exe", files.userdir + "/python files/" + name + ".py"], stdout=sp.PIPE)
+    while p.poll() is None:
+        out = p.stdout.read()
+        master.ins_cons(out)

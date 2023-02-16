@@ -1,12 +1,7 @@
 """this is a script to alert a message in a tkinter window."""
-from tkinter import Toplevel, Entry, Button, IntVar, StringVar, Frame
+from tkinter import Toplevel, Entry, Button, IntVar, StringVar
 root = None
 master = None
-
-
-def set_master(new_master):
-    global master
-    master = new_master
 
 
 def alert(msg: str, choice=True, button_a_msg: str = "Ok", button_b_msg: str = "cancel"):
@@ -32,6 +27,7 @@ def alert(msg: str, choice=True, button_a_msg: str = "Ok", button_b_msg: str = "
             button_a = Button(root, text=button_a_msg, command=lambda: [clicked.set(1), chosen.set(button_a_msg)])
             button_a.pack()
         text.config(state="disabled")
+        button_a.focus()
         button_a.wait_variable(clicked)
         result = chosen.get()
         root.destroy()

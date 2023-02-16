@@ -14,11 +14,6 @@ def choosedir():
     output.output(files.userdir)
 
 
-def set_master(new_master):
-    global master
-    master = new_master
-
-
 def opensettings():
     global master
     root = tk.Toplevel(master)

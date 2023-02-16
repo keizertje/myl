@@ -6,11 +6,6 @@ userdir = os.path.expanduser("~")
 master = None
 
 
-def set_master(new_master):
-    global master
-    master = new_master
-
-
 def create(name: str, text: str, ext: str = ".py"):
     global master
     global userdir
