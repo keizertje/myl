@@ -75,10 +75,15 @@ def color(text):
 
     # strings option 1
     lst = findOccurrences(inp, ['"'], word=False)
-    while not len(lst) <= 1:
-        text.tag_add(str(count), f"1.0+{lst[0][0]}c", f"1.0+{lst[1][1]}c")
-        text.tag_config(str(count), foreground="green", font="arial 11")
-        del lst[0], lst[0]
+    while not len(lst) < 1:
+        if len(lst) == 1:
+            text.tag_add(str(count), f"1.0+{lst[0][0]}c", f"1.0+{lst[0][1]}c lineend")
+            text.tag_config(str(count), foreground="green", font="arial 11")
+            del lst[0]
+        else:
+            text.tag_add(str(count), f"1.0+{lst[0][0]}c", f"1.0+{lst[1][1]}c")
+            text.tag_config(str(count), foreground="green", font="arial 11")
+            del lst[0], lst[0]
         count += 1
 
     # strings option 2

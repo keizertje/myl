@@ -13,9 +13,6 @@ import settings  # self-made
 import time
 
 
-# TODO -fix ctrl+z
-# TODO -fix levels
-
 class App(Tk):
     def __init__(self):
         """ Here the app is created.
@@ -30,8 +27,8 @@ class App(Tk):
         # set the global master variables in other files
         output.master = self; alert.master = self; execute.master = self; files.master = self; settings.master = self
 
-        # make window fullscreen
-        self.attributes('-fullscreen', True)
+        # set title
+        self.title("python IDE")
 
         # var types supported by tkinter for trace adds and non-statement variable changes
         self.state = StringVar(self, value="saved")
@@ -43,28 +40,28 @@ class App(Tk):
         self.levels = [0]
 
         # automatic header updates a. o.
-        self.state.trace_add("write", callback=lambda a, b, c: self.__update_filename())
-        self.file.trace_add("write", callback=lambda a, b, c: [self.set_input(files.openfile(self.file.get())[0]),
-                                                               self.name.delete("0", END),
-                                                               self.name.insert(END, self.file.get().split(".")[0]),
-                                                               self.__update_filename()])
+        self.state.trace_add("write", callback=lambda *args, **kwargs: self.__update_filename())
+        self.file.trace_add("write", callback=lambda *args, **kwargs: [self.set_input(files.openfile(self.file.get())[0]),
+                                                                       self.name.delete("0", END),
+                                                                       self.name.insert(END, self.file.get().split(".")[0]),
+                                                                       self.__update_filename()])
 
         # creating the widgets
         # main coding
         self.inputFrame = Frame(self)
-        self.input = ScrolledText(self.inputFrame, font='Arial 11', selectbackground="#acf", selectforeground="#000")
-        self.line_numbers = Text(self.inputFrame, width=4, font='Arial 11', background="#eee")
+        self.input = ScrolledText(self.inputFrame, font='arial 11', selectbackground="#acf", selectforeground="#000")
+        self.line_numbers = Text(self.inputFrame, width=4, font='arial 11', background="#eee")
 
         # top frame for buttons and header.
         self.toppadding = Frame(self, height=5)
         self.top = Frame(self)
-        self.header = Label(self.top, textvariable=self.filename, font='Arial 18')
+        self.header = Label(self.top, textvariable=self.filename, font='arial 18')
         self.run = ttk.Button(self.top, text="run", command=lambda: Thread(target=lambda: [self.savefile(), execute.Execute(self.name.get())]).start())
         self.exit = ttk.Button(self.top, text="exit", command=lambda: self.exit_app())
         self.save = ttk.Button(self.top, text="save", command=lambda: self.savefile())
         self.open = ttk.Button(self.top, text="open", command=lambda: self.__openfile())
         self.settings = ttk.Button(self.top, text="settings", command=lambda: settings.opensettings())
-        self.name = Entry(self.top, font=('Arial', 13))
+        self.name = Entry(self.top, font=('arial', 13))
 
         # bottom info
         self.bottom = Frame(self)
@@ -72,10 +69,12 @@ class App(Tk):
 
         # console for seeing output a. o.
         self.output = Frame(self, height=150)
-        self.console = ScrolledText(self.output, font="Arial 11", selectbackground="#acf", selectforeground="#000", state="disabled", height=10)
-        frame1 = Frame(self.output)
-        frame2 = Frame(frame1, width=16)
-        self.consinput = Entry(frame1, font="Arial 11")
+        self.console_btns_frame = Frame(self.output)
+        self.console_btns_clear = ttk.Button(self.console_btns_frame, text="erase", command=lambda: self.del_cons())
+        self.console = ScrolledText(self.output, font="arial 11", selectbackground="#acf", selectforeground="#000", state="disabled", height=10)
+        self.console_input_frame = Frame(self.output)
+        fill_in = Frame(self.console_input_frame, width=16)
+        self.consinput = Entry(self.console_input_frame, font="arial 11")
 
         # **pack anything at the right place**
         # the lowest layer
@@ -84,9 +83,11 @@ class App(Tk):
 
         # output part
         self.output.pack(side=BOTTOM, fill=BOTH, padx=10)
+        self.console_btns_frame.pack(side=LEFT, fill=Y, padx=5)
+        self.console_btns_clear.pack(side=TOP)
         self.console.pack(fill=BOTH)
-        frame1.pack(fill=X)
-        frame2.pack(side=RIGHT, fill=Y)
+        self.console_input_frame.pack(fill=X)
+        fill_in.pack(side=RIGHT, fill=Y)
         self.consinput.pack(fill=X, expand=True)
 
         # main coding widget
@@ -107,23 +108,24 @@ class App(Tk):
         self.settings.pack(side=RIGHT, padx=5, ipadx=10)
         self.name.pack(side=RIGHT, padx=5, ipadx=20)
 
-        # bindings and hotkeys
+        # **bindings and hotkeys**
         self.input.bind("<KeyRelease>", lambda e: self.afterKeyPress(e))
         self.input.bind("<Key>", lambda e: self.onKeyPress(e))
-        self.input.bind("<Control-Enter>", lambda e: [self.set_input(self.get_input() + "\b"), self.run.invoke()])
-        self.input.bind("<Escape>", lambda e: self.exit.invoke())
-        self.input.bind("<Control-s>", lambda e: self.save.invoke())
-        self.input.bind("<Control-o>", lambda e: self.open.invoke())
-        self.input.bind("<Control-z>", lambda e: [self.changes.change_version(-1),
-                                                  self.set_input(self.changes.current())])
-        self.input.bind("<Control-y>", lambda e: [self.changes.change_version(1),
-                                                  self.set_input(self.changes.current())])
+        self.input.bind_all("<Control-Return>", lambda e: [self.set_input(self.get_input() + "\b"), self.run.invoke()])
+        self.input.bind_all("<Escape>", lambda e: self.exit.invoke())
+        self.input.bind_all("<Control-s>", lambda e: self.save.invoke())
+        self.input.bind_all("<Control-o>", lambda e: self.open.invoke())
+        self.input.bind_all("<Control-z>", lambda e: [self.changes.change_version(-1),
+                                                      self.set_input(self.changes.current)])
+        self.input.bind_all("<Control-y>", lambda e: [self.changes.change_version(1),
+                                                      self.set_input(self.changes.current)])
+        self.input.bind_all("<Control-n>", lambda e: App().mainloop())
+        self.consinput.bind("<Return>", lambda e: self.stdin())
 
         self.input.focus()
         self.loop()
 
     def exit_app(self):
-        execute.kill()
         if self.state == "unsaved":
             if alert.alert("your code is unsaved! save now?") == "Ok":
                 self.savefile()
@@ -135,7 +137,7 @@ class App(Tk):
             choise = alert.alert("your code is unsaved, save now?")
             if choise == "Ok":
                 files.create(self.name.get(), self.get_input())
-        chosen = askopenfilename(filetypes=[("Python Files", ".py")], initialdir=files.userdir + "/python files").split("/")[-1].split(".")[0]
+        chosen = askopenfilename(filetypes=[("Python Files", ".py"), ("All files", "")], initialdir=files.userdir + "/python files").split("/")[-1].split(".")[0]
         self.file.set(chosen)
         if files.openfile(chosen)[1]:
             self.state.set("saved")
@@ -144,6 +146,7 @@ class App(Tk):
         else:
             self.file.set("")
             self.state.set("unsaved")
+        color(self.input)
 
     def set_input(self, content):
         self.input.delete("1.0", END)
@@ -164,7 +167,6 @@ class App(Tk):
             if e.keysym == "Tab":
                 self.input.delete(INSERT + "-1c", INSERT)
                 self.input.insert(INSERT, "    ")
-        color(self.input)
         self.state.set("saved" if self.lastsavedtext.get() == self.get_input() else "unsaved")
         self.changes.add_version(self.get_input())
 
@@ -172,13 +174,18 @@ class App(Tk):
         if self.state.get() == "unsaved":
             files.create(self.name.get(), self.get_input())
             self.lastsavedtext.set(self.get_input())
+        color(self.input)
 
     def loop(self):
-        self.onKeyPress()
-        self.afterKeyPress()
+        # colors
+        color(self.input)
+
+        # indexer in the bottom
         index = self.input.index(INSERT).split(".")
         index[1] = str(int(index[1]) + 1)
         self.indexer.config(text=":".join(index))
+
+        # line numbers
         self.line_numbers.delete("1.0", END)
         for i in range(self.input.count("1.0", END, "lines")[0]):
             str_i = str(i + 1)
@@ -190,6 +197,8 @@ class App(Tk):
                         str_i = " " + str_i
             self.line_numbers.insert(END, ("\n" + str_i) if i + 1 != 1 else str_i)
         self.line_numbers.yview_moveto(self.input.yview()[0])
+
+        # recursion
         self.after(10, lambda: self.loop())
 
     def __update_filename(self):
@@ -198,15 +207,20 @@ class App(Tk):
     def ins_cons(self, chars, err=False):
         index = self.input.index(END + "-1c")
         self.console.config(state="normal")
-        self.console.insert(END+"-1c", chars)
+        self.console.insert(END + "-1c", chars)
         if err:
-            self.console.tag_add("err", index, index + f"+{len(chars)}c")
-            self.console.tag_config("err", foreground="red")
+            self.console.tag_add(index, index, f"{index}+{len(chars)}c")
+            self.console.tag_config(index, foreground="red")
         self.console.config(state="disabled")
         self.console.see("end")
         self.console.update()
 
     def del_cons(self):
         self.console.config(state="normal")
-        self.console.delete("1.0", END+"-1c")
+        self.console.delete("1.0", END + "-1c")
         self.console.config(state="disabled")
+
+    def stdin(self):
+        execute.stdin(self.consinput.get() + "\n")
+        self.ins_cons(self.consinput.get() + "\n")
+        self.consinput.delete("0", END)

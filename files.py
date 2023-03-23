@@ -1,6 +1,6 @@
 import os
 from alert import alert
-import tkinter as tk
+from tkinter.filedialog import asksaveasfilename
 
 userdir = os.path.expanduser("~")
 master = None
@@ -27,9 +27,9 @@ def create(name: str, text: str, ext: str = ".py"):
             master.file.set(name)
             master.state.set("saved")
             master.newfile.set("old")
-
     else:
-        alert("name  is empty, please enter a name", choice=False)
+        name = asksaveasfilename(initialdir=userdir + "/python files/")
+        create(name.split("/")[-1], text)
 
 
 def openfile(name: str):
