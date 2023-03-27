@@ -106,113 +106,47 @@ def color(text):
                     count += 1
                 break
 
-    # ()
-    if text.get("insert" + "-1c", "insert") == "(":
-        opening = inp.find("(", len(text.get("1.0", "insert")) - 1)
-        closing = inp.find(")", opening)
+    openingBrackets = ['(', '[', '{']
+    closingBrackets = [')', ']', '}']
+
+    def backgroundTheBrackets(opening, closing):
+        text.tag_add("opening bracket", f"1.0+{opening}c", f"1.0+{opening + 1}c")
+        text.tag_add("closing bracket", f"1.0+{closing}c", f"1.0+{closing + 1}c")
+        text.tag_config("opening bracket", background="#acf")
+        text.tag_config("closing bracket", background="#acf")       
+
+    if text.get("insert" + "-1c", "insert") in openingBrackets:
+        ob = text.get("insert" + "-1c", "insert")
+        ind_b = openingBrackets.index(ob)
+        cb = closingBrackets[ind_b]
+        opening = inp.find(ob, len(text.get("1.0", "insert")) - 1)
+        closing = inp.find(cb, opening)
         if closing != -1:
-            text.tag_add("opening bracket", f"1.0+{opening}c", f"1.0+{opening + 1}c")
-            text.tag_add("closing bracket", f"1.0+{closing}c", f"1.0+{closing + 1}c")
-            text.tag_config("opening bracket", background="#acf")
-            text.tag_config("closing bracket", background="#acf")
+            backgroundTheBrackets(opening, closing)
 
-    elif text.get("insert" + "-1c", "insert") == ")":
-        closing = inp.find(")", len(text.get("1.0", "insert")) - 1)
-        opening = inp.rfind("(", 0, closing)
+    elif text.get("insert" + "-1c", "insert") in closingBrackets:
+        cb = text.get("insert" + "-1c", "insert")
+        ind_b = closingBrackets.index(cb)
+        ob = openingBrackets[ind_b]
+        closing = inp.find(cb, len(text.get("1.0", "insert")) - 1)
+        opening = inp.rfind(ob, 0, closing)
         if opening != -1:
-            text.tag_add("opening bracket", f"1.0+{opening}c", f"1.0+{opening + 1}c")
-            text.tag_add("closing bracket", f"1.0+{closing}c", f"1.0+{closing + 1}c")
-            text.tag_config("opening bracket", background="#acf")
-            text.tag_config("closing bracket", background="#acf")
+            backgroundTheBrackets(opening, closing)
 
-    elif text.get("insert", "insert" + "+1c") == "(":
-        opening = inp.find("(", len(text.get("1.0", "insert")))
-        closing = inp.find(")", opening)
+    elif text.get("insert", "insert" + "+1c") in openingBrackets:
+        ob = text.get("insert", "insert" + "+1c")
+        ind_b = openingBrackets.index(ob)
+        cb = closingBrackets[ind_b]
+        opening = inp.find(ob, len(text.get("1.0", "insert")))
+        closing = inp.find(cb, opening)
         if closing != -1:
-            text.tag_add("opening bracket", f"1.0+{opening}c", f"1.0+{opening + 1}c")
-            text.tag_add("closing bracket", f"1.0+{closing}c", f"1.0+{closing + 1}c")
-            text.tag_config("opening bracket", background="#acf")
-            text.tag_config("closing bracket", background="#acf")
+            backgroundTheBrackets(opening, closing)
 
-    elif text.get("insert", "insert" + "+1c") == ")":
-        closing = inp.find(")", len(text.get("1.0", "insert")))
-        opening = inp.rfind("(", 0, closing)
+    elif text.get("insert", "insert" + "+1c") in closingBrackets:
+        cb = text.get("insert", "insert" + "+1c")
+        ind_b = closingBrackets.index(cb)
+        ob = openingBrackets[ind_b]
+        closing = inp.find(cb, len(text.get("1.0", "insert")))
+        opening = inp.rfind(ob, 0, closing)
         if opening != -1:
-            text.tag_add("opening bracket", f"1.0+{opening}c", f"1.0+{opening + 1}c")
-            text.tag_add("closing bracket", f"1.0+{closing}c", f"1.0+{closing + 1}c")
-            text.tag_config("opening bracket", background="#acf")
-            text.tag_config("closing bracket", background="#acf")
-
-    # []
-    if text.get("insert" + "-1c", "insert") == "[":
-        opening = inp.find("[", len(text.get("1.0", "insert")) - 1)
-        closing = inp.find("]", opening)
-        if closing != -1:
-            text.tag_add("opening bracket", f"1.0+{opening}c", f"1.0+{opening + 1}c")
-            text.tag_add("closing bracket", f"1.0+{closing}c", f"1.0+{closing + 1}c")
-            text.tag_config("opening bracket", background="#acf")
-            text.tag_config("closing bracket", background="#acf")
-
-    elif text.get("insert" + "-1c", "insert") == "]":
-        closing = inp.find("]", len(text.get("1.0", "insert")) - 1)
-        opening = inp.rfind("[", 0, closing)
-        if opening != -1:
-            text.tag_add("opening bracket", f"1.0+{opening}c", f"1.0+{opening + 1}c")
-            text.tag_add("closing bracket", f"1.0+{closing}c", f"1.0+{closing + 1}c")
-            text.tag_config("opening bracket", background="#acf")
-            text.tag_config("closing bracket", background="#acf")
-
-    elif text.get("insert", "insert" + "+1c") == "[":
-        opening = inp.find("[", len(text.get("1.0", "insert")))
-        closing = inp.find("]", opening)
-        if closing != -1:
-            text.tag_add("opening bracket", f"1.0+{opening}c", f"1.0+{opening + 1}c")
-            text.tag_add("closing bracket", f"1.0+{closing}c", f"1.0+{closing + 1}c")
-            text.tag_config("opening bracket", background="#acf")
-            text.tag_config("closing bracket", background="#acf")
-
-    elif text.get("insert", "insert" + "+1c") == "]":
-        closing = inp.find("]", len(text.get("1.0", "insert")))
-        opening = inp.rfind("[", 0, closing)
-        if opening != -1:
-            text.tag_add("opening bracket", f"1.0+{opening}c", f"1.0+{opening + 1}c")
-            text.tag_add("closing bracket", f"1.0+{closing}c", f"1.0+{closing + 1}c")
-            text.tag_config("opening bracket", background="#acf")
-            text.tag_config("closing bracket", background="#acf")
-
-    # {}
-    if text.get("insert" + "-1c", "insert") == "{":
-        opening = inp.find("{", len(text.get("1.0", "insert")) - 1)
-        closing = inp.find("}", opening)
-        if closing != -1:
-            text.tag_add("opening bracket", f"1.0+{opening}c", f"1.0+{opening + 1}c")
-            text.tag_add("closing bracket", f"1.0+{closing}c", f"1.0+{closing + 1}c")
-            text.tag_config("opening bracket", background="#acf")
-            text.tag_config("closing bracket", background="#acf")
-
-    elif text.get("insert" + "-1c", "insert") == "}":
-        closing = inp.find("}", len(text.get("1.0", "insert")) - 1)
-        opening = inp.rfind("{", 0, closing)
-        if opening != -1:
-            text.tag_add("opening bracket", f"1.0+{opening}c", f"1.0+{opening + 1}c")
-            text.tag_add("closing bracket", f"1.0+{closing}c", f"1.0+{closing + 1}c")
-            text.tag_config("opening bracket", background="#acf")
-            text.tag_config("closing bracket", background="#acf")
-
-    elif text.get("insert", "insert" + "+1c") == "{":
-        opening = inp.find("{", len(text.get("1.0", "insert")))
-        closing = inp.find("}", opening)
-        if closing != -1:
-            text.tag_add("opening bracket", f"1.0+{opening}c", f"1.0+{opening + 1}c")
-            text.tag_add("closing bracket", f"1.0+{closing}c", f"1.0+{closing + 1}c")
-            text.tag_config("opening bracket", background="#acf")
-            text.tag_config("closing bracket", background="#acf")
-
-    elif text.get("insert", "insert" + "+1c") == "}":
-        closing = inp.find("}", len(text.get("1.0", "insert")))
-        opening = inp.rfind("{", 0, closing)
-        if opening != -1:
-            text.tag_add("opening bracket", f"1.0+{opening}c", f"1.0+{opening + 1}c")
-            text.tag_add("closing bracket", f"1.0+{closing}c", f"1.0+{closing + 1}c")
-            text.tag_config("opening bracket", background="#acf")
-            text.tag_config("closing bracket", background="#acf")
+            backgroundTheBrackets(opening, closing)
