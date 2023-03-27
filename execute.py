@@ -25,7 +25,10 @@ def refresh(last_out, last_err):
 
 def stdin(chars):
     global process
-    process.communicate(input=chars)
+    if process is not None:
+        process.communicate(input=chars)
+    else:
+        pass
 
 
 def Execute(name):
@@ -50,3 +53,4 @@ def Execute(name):
                 stdout, stderr = refresh(stdout, stderr)
     refresh(stdout, stderr)
     master.ins_cons("Process finished with exit code " + str(process.poll()) + "\n")
+    process = None

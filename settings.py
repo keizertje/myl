@@ -8,12 +8,6 @@ master = None
 settings = files.openfile("")
 
 
-def choosedir():
-    chosen = askdirectory(initialdir="c://users")
-    files.userdir = f"{chosen}"
-    output.output(files.userdir)
-
-
 def opensettings():
     global master
     root = tk.Toplevel(master)

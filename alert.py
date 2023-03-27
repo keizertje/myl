@@ -1,5 +1,6 @@
 """this is a script to alert a message in a tkinter window."""
-from tkinter import Toplevel, Entry, Button, IntVar, StringVar
+from tkinter import Toplevel, Entry, IntVar, StringVar
+from tkinter.ttk import Button
 root = None
 master = None
 

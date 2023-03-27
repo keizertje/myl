@@ -1,16 +1,13 @@
 from tkinter import ttk
 from tkinter import *
-from tkinter.scrolledtext import ScrolledText
 from tkinter.filedialog import askopenfilename
-from versions import VersionManager  # self-made
 from coloring import color  # self-made
 from threading import Thread
 import execute  # self-made
 import alert  # self-made
-import output  # self-made
 import files  # self-made
 import settings  # self-made
-import time
+from console import Console
 
 
 class App(Tk):
@@ -25,19 +22,21 @@ class App(Tk):
         super(App, self).__init__()
 
         # set the global master variables in other files
-        output.master = self; alert.master = self; execute.master = self; files.master = self; settings.master = self
+        alert.master = self; execute.master = self; files.master = self; settings.master = self
 
         # set title
         self.title("python IDE")
 
         # var types supported by tkinter for trace adds and non-statement variable changes
-        self.state = StringVar(self, value="saved")
+        self.state = StringVar(self, value="unsaved")
         self.newfile = StringVar(self, value="new")
         self.file = StringVar(self)
         self.lastsavedtext = StringVar(self)
-        self.changes = VersionManager()
-        self.filename = StringVar(self, value="Untitled (saved)")
+        self.filename = StringVar(self, value="Untitled (unsaved)")
         self.levels = [0]
+        self.border = {"highlightbackground": "#bbb", "highlightthickness": "1px", "highlightcolor": "#bbb", "relief": FLAT}
+        self.common_entry_arguments = {**self.border, "font": 'arial 11', "selectbackground": "#acf", "selectforeground": "#000"}
+        self.common_text_arguments = {**self.common_entry_arguments, "wrap": NONE}
 
         # automatic header updates a. o.
         self.state.trace_add("write", callback=lambda *args, **kwargs: self.__update_filename())
@@ -48,52 +47,56 @@ class App(Tk):
 
         # creating the widgets
         # main coding
-        self.inputFrame = Frame(self)
-        self.input = ScrolledText(self.inputFrame, font='arial 11', selectbackground="#acf", selectforeground="#000")
-        self.line_numbers = Text(self.inputFrame, width=4, font='arial 11', background="#eee")
+        self.input_frame = Frame(self)
+        self.input = Text(self.input_frame, undo=True, **self.common_text_arguments)
+        self.vscroll = Scrollbar(self.input_frame, orient="vertical", command=self.input.yview)
+        self.hscroll = Scrollbar(self.input_frame, orient="horizontal", command=self.input.xview)
+        self.input["yscrollcommand"] = self.vscroll.set
+        self.input["xscrollcommand"] = self.hscroll.set
+        self.line_numbers = Text(self.input_frame, width=4, background="#fff", **self.common_text_arguments)
+
+        # console
+        self.console = Console
+        self.console.master = self
+        self.console.border = self.border
+        self.console.common_entry_arguments = self.common_entry_arguments
+        self.console.common_text_arguments = self.common_text_arguments
+        self.console = self.console()
 
         # top frame for buttons and header.
         self.toppadding = Frame(self, height=5)
         self.top = Frame(self)
         self.header = Label(self.top, textvariable=self.filename, font='arial 18')
-        self.run = ttk.Button(self.top, text="run", command=lambda: Thread(target=lambda: [self.savefile(), execute.Execute(self.name.get())]).start())
+        self.run = ttk.Button(self.top, text="run", command=lambda: [self.savefile(),
+                                                                     execute.Execute(self.name.get())])
         self.exit = ttk.Button(self.top, text="exit", command=lambda: self.exit_app())
         self.save = ttk.Button(self.top, text="save", command=lambda: self.savefile())
         self.open = ttk.Button(self.top, text="open", command=lambda: self.__openfile())
         self.settings = ttk.Button(self.top, text="settings", command=lambda: settings.opensettings())
-        self.name = Entry(self.top, font=('arial', 13))
+        self.name = Entry(self.top, **self.common_entry_arguments)
+
+        # search
+        self.search_frame = Frame(self, **self.border)
+        self.search_entry = Entry(self.search_frame, **self.common_entry_arguments)
 
         # bottom info
-        self.bottom = Frame(self)
+        self.bottom = Frame(self, **self.border)
         self.indexer = Label(self.bottom, text="1:1")
 
-        # console for seeing output a. o.
-        self.output = Frame(self, height=150)
-        self.console_btns_frame = Frame(self.output)
-        self.console_btns_clear = ttk.Button(self.console_btns_frame, text="erase", command=lambda: self.del_cons())
-        self.console = ScrolledText(self.output, font="arial 11", selectbackground="#acf", selectforeground="#000", state="disabled", height=10)
-        self.console_input_frame = Frame(self.output)
-        fill_in = Frame(self.console_input_frame, width=16)
-        self.consinput = Entry(self.console_input_frame, font="arial 11")
-
-        # **pack anything at the right place**
-        # the lowest layer
-        self.bottom.pack(side=BOTTOM, padx=5, pady=5, fill=X)
+        # pack anything at the right place
+        # the lowest layer first
+        self.bottom.pack(side=BOTTOM, padx=10, pady=5, fill=X)
         self.indexer.pack(side=RIGHT, padx=5)
 
-        # output part
-        self.output.pack(side=BOTTOM, fill=BOTH, padx=10)
-        self.console_btns_frame.pack(side=LEFT, fill=Y, padx=5)
-        self.console_btns_clear.pack(side=TOP)
-        self.console.pack(fill=BOTH)
-        self.console_input_frame.pack(fill=X)
-        fill_in.pack(side=RIGHT, fill=Y)
-        self.consinput.pack(fill=X, expand=True)
+        # the console
+        self.console.pack(side=BOTTOM, fill=X, padx=10)
 
         # main coding widget
-        self.inputFrame.pack(side=BOTTOM, expand=True, fill=BOTH, padx=10, pady=10)
+        self.input_frame.pack(side=BOTTOM, expand=True, fill=BOTH, padx=10, pady=10)
+        self.hscroll.pack(side=BOTTOM, fill=X)
         self.line_numbers.pack(side=LEFT, fill=Y)
-        self.input.pack(expand=True, fill=BOTH)
+        self.input.pack(side=LEFT, expand=True, fill=BOTH)
+        self.vscroll.pack(side=LEFT, fill=Y)
 
         # padding at the top
         self.toppadding.pack()
@@ -108,19 +111,21 @@ class App(Tk):
         self.settings.pack(side=RIGHT, padx=5, ipadx=10)
         self.name.pack(side=RIGHT, padx=5, ipadx=20)
 
+        # search
+        self.search_frame.pack(fill=X, padx=10, pady=10)
+        self.search_entry.pack(side=LEFT, padx=2, pady=2)
+
         # **bindings and hotkeys**
         self.input.bind("<KeyRelease>", lambda e: self.afterKeyPress(e))
         self.input.bind("<Key>", lambda e: self.onKeyPress(e))
-        self.input.bind_all("<Control-Return>", lambda e: [self.set_input(self.get_input() + "\b"), self.run.invoke()])
+        self.input.bind_all("<Control-Return>", lambda e: [self.set_input(self.get_input()[:-1]), self.run.invoke()])
         self.input.bind_all("<Escape>", lambda e: self.exit.invoke())
         self.input.bind_all("<Control-s>", lambda e: self.save.invoke())
         self.input.bind_all("<Control-o>", lambda e: self.open.invoke())
-        self.input.bind_all("<Control-z>", lambda e: [self.changes.change_version(-1),
-                                                      self.set_input(self.changes.current)])
-        self.input.bind_all("<Control-y>", lambda e: [self.changes.change_version(1),
-                                                      self.set_input(self.changes.current)])
+        self.input.bind_all("<Control-z>", lambda e: self.input.edit_undo())
+        self.input.bind_all("<Control-y>", lambda e: self.input.edit_redo())
         self.input.bind_all("<Control-n>", lambda e: App().mainloop())
-        self.consinput.bind("<Return>", lambda e: self.stdin())
+        self.search_entry.bind("<KeyRelease>", lambda e: self.search())
 
         self.input.focus()
         self.loop()
@@ -168,7 +173,6 @@ class App(Tk):
                 self.input.delete(INSERT + "-1c", INSERT)
                 self.input.insert(INSERT, "    ")
         self.state.set("saved" if self.lastsavedtext.get() == self.get_input() else "unsaved")
-        self.changes.add_version(self.get_input())
 
     def savefile(self):
         if self.state.get() == "unsaved":
@@ -205,22 +209,24 @@ class App(Tk):
         self.filename.set(("Untitled " if self.file.get().strip() == "" else self.file.get()) + "(" + self.state.get() + ")")
 
     def ins_cons(self, chars, err=False):
-        index = self.input.index(END + "-1c")
-        self.console.config(state="normal")
-        self.console.insert(END + "-1c", chars)
         if err:
-            self.console.tag_add(index, index, f"{index}+{len(chars)}c")
-            self.console.tag_config(index, foreground="red")
-        self.console.config(state="disabled")
-        self.console.see("end")
-        self.console.update()
+            self.console.stderr(chars)
+        else:
+            self.console.stdout(chars)
 
     def del_cons(self):
-        self.console.config(state="normal")
+        self.console.output.config(state="normal")
         self.console.delete("1.0", END + "-1c")
-        self.console.config(state="disabled")
+        self.console.output.config(state="disabled")
 
-    def stdin(self):
-        execute.stdin(self.consinput.get() + "\n")
-        self.ins_cons(self.consinput.get() + "\n")
-        self.consinput.delete("0", END)
+    def search(self):
+        for tag in self.input.tag_names():
+            self.input.tag_delete(tag)
+        inp = self.search_entry.get()
+        pos = self.input.search(inp, "1.0", END)
+        while pos:
+            self.input.tag_add(pos, pos, f"{pos}+{len(inp)}c")
+            self.input.tag_config(pos, background="#ed0")
+            print(pos, f"{pos}+{len(inp)}c", end="\t\t")
+            pos = self.input.search(inp, f"{pos}+{len(inp)}c", END)
+        print()
