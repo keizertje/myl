@@ -1,10 +1,10 @@
 from tkinter import ttk
 from tkinter import *
 from tkinter.filedialog import askopenfilename
+import tkinter.messagebox as alert
 from coloring import color  # self-made
 from threading import Thread
 import execute  # self-made
-import alert  # self-made
 import files  # self-made
 import settings  # self-made
 from console import Console
@@ -22,7 +22,7 @@ class App(Tk):
         super(App, self).__init__()
 
         # set the global master variables in other files
-        alert.master = self; execute.master = self; files.master = self; settings.master = self
+        execute.master = self; files.master = self; settings.master = self
 
         # set title
         self.title("python IDE")
@@ -68,7 +68,7 @@ class App(Tk):
         self.top = Frame(self)
         self.header = Label(self.top, textvariable=self.filename, font='arial 18')
         self.run = ttk.Button(self.top, text="run", command=lambda: [self.savefile(),
-                                                                     execute.Execute(self.name.get())])
+                                                                     self.console.run(self.name.get())])
         self.exit = ttk.Button(self.top, text="exit", command=lambda: self.exit_app())
         self.save = ttk.Button(self.top, text="save", command=lambda: self.savefile())
         self.open = ttk.Button(self.top, text="open", command=lambda: self.__openfile())
@@ -132,17 +132,16 @@ class App(Tk):
 
     def exit_app(self):
         if self.state == "unsaved":
-            if alert.alert("your code is unsaved! save now?") == "Ok":
+            if alert.askquestion(title="save now?", message="your code is unsaved! save now?") == alert.YES:
                 self.savefile()
         self.destroy()
         self.quit()
 
     def __openfile(self):
-        if self.state.get() == "unsaved":
-            choise = alert.alert("your code is unsaved, save now?")
-            if choise == "Ok":
-                files.create(self.name.get(), self.get_input())
-        chosen = askopenfilename(filetypes=[("Python Files", ".py"), ("All files", "")], initialdir=files.userdir + "/python files").split("/")[-1].split(".")[0]
+        if self.state.get() == "unsaved" and self.newfile.get() == "old":
+            if alert.askquestion(title="save now?", message="your code is unsaved! save now?") == alert.YES:
+                self.savefile()
+        chosen = askopenfilename(filetypes=[("Python files", ".py"), ("All files", "")], initialdir=files.userdir + "/python files").split("/")[-1].split(".")[0]
         self.file.set(chosen)
         if files.openfile(chosen)[1]:
             self.state.set("saved")
@@ -216,7 +215,7 @@ class App(Tk):
 
     def del_cons(self):
         self.console.output.config(state="normal")
-        self.console.delete("1.0", END + "-1c")
+        self.console.output.delete("1.0", END + "-1c")
         self.console.output.config(state="disabled")
 
     def search(self):
@@ -224,7 +223,7 @@ class App(Tk):
             self.input.tag_delete(tag)
         inp = self.search_entry.get()
         pos = self.input.search(inp, "1.0", END)
-        while pos:
+        while pos != "":
             self.input.tag_add(pos, pos, f"{pos}+{len(inp)}c")
             self.input.tag_config(pos, background="#ed0")
             print(pos, f"{pos}+{len(inp)}c", end="\t\t")

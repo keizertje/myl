@@ -1,44 +1,45 @@
 import os
-from alert import alert
-from tkinter.filedialog import asksaveasfilename
+from tkinter.filedialog import asksaveasfilename, YES
+from tkinter.messagebox import askquestion
 
 userdir = os.path.expanduser("~")
+pythonfilesdir = userdir + "\\python files\\"
 master = None
 
 
 def create(name: str, text: str, ext: str = ".py"):
     global master
-    global userdir
-    if not os.path.exists(userdir + "/python files"):
-        os.makedirs(userdir + "/python files")
+    global pythonfilesdir
+    if not os.path.exists(pythonfilesdir):
+        os.makedirs(pythonfilesdir)
     if not name.strip() == "":
-        if os.path.exists(f'{userdir}/python files/{name}{ext}') and master.newfile.get() == "new":
-            if alert(msg="file already exists, do you want to replace?", button_b_msg="No", button_a_msg="Yes") == "Yes":
-                file = open(f'{userdir}/python files/{name}{ext}', 'w')
+        if os.path.exists(pythonfilesdir + name + ext) and master.newfile.get() == "new":
+            if askquestion("file already exists", "file already exists, do you want to replace?") == YES:
+                file = open(pythonfilesdir + name + ext, 'w')
                 file.write(text)
                 file.close()
                 master.file.set(name)
                 master.state.set("saved")
                 master.newfile.set("old")
         else:
-            file = open(f'{userdir}/python files/{name}{ext}', 'w')
+            file = open(pythonfilesdir + name + ext, 'w')
             file.write(text)
             file.close()
             master.file.set(name)
             master.state.set("saved")
             master.newfile.set("old")
     else:
-        name = asksaveasfilename(initialdir=userdir + "/python files/")
+        name = asksaveasfilename(initialdir=pythonfilesdir)
         create(name.split("/")[-1], text)
 
 
 def openfile(name: str):
     if len(name.split("/")) == 1 and len(name.split(".")) == 1:
-        name = f'{userdir}/python files/{name}.py'
+        name = f'{pythonfilesdir}{name}.py'
     elif len(name.split("/")) == 1:
-        name = f'{userdir}/python files/{name}'
+        name = f'{pythonfilesdir}{name}'
     elif len(name.split(".")) == 1:
-        name = f'{userdir}/python files/{name}'
+        name = f'{pythonfilesdir}{name}'
     if os.path.exists(name):
         file = open(name, "r")
         fileinput = file.read()

@@ -106,8 +106,8 @@ def color(text):
                     count += 1
                 break
 
-    openingBrackets = ['(', '[', '{']
-    closingBrackets = [')', ']', '}']
+    opening_brackets = ['(', '[', '{']
+    closing_brackets = [')', ']', '}']
 
     def backgroundTheBrackets(opening, closing):
         text.tag_add("opening bracket", f"1.0+{opening}c", f"1.0+{opening + 1}c")
@@ -115,37 +115,37 @@ def color(text):
         text.tag_config("opening bracket", background="#acf")
         text.tag_config("closing bracket", background="#acf")       
 
-    if text.get("insert" + "-1c", "insert") in openingBrackets:
+    if text.get("insert" + "-1c", "insert") in opening_brackets:
         ob = text.get("insert" + "-1c", "insert")
-        ind_b = openingBrackets.index(ob)
-        cb = closingBrackets[ind_b]
+        ind_b = opening_brackets.index(ob)
+        cb = closing_brackets[ind_b]
         opening = inp.find(ob, len(text.get("1.0", "insert")) - 1)
         closing = inp.find(cb, opening)
         if closing != -1:
             backgroundTheBrackets(opening, closing)
 
-    elif text.get("insert" + "-1c", "insert") in closingBrackets:
+    elif text.get("insert" + "-1c", "insert") in closing_brackets:
         cb = text.get("insert" + "-1c", "insert")
-        ind_b = closingBrackets.index(cb)
-        ob = openingBrackets[ind_b]
+        ind_b = closing_brackets.index(cb)
+        ob = opening_brackets[ind_b]
         closing = inp.find(cb, len(text.get("1.0", "insert")) - 1)
         opening = inp.rfind(ob, 0, closing)
         if opening != -1:
             backgroundTheBrackets(opening, closing)
 
-    elif text.get("insert", "insert" + "+1c") in openingBrackets:
+    elif text.get("insert", "insert" + "+1c") in opening_brackets:
         ob = text.get("insert", "insert" + "+1c")
-        ind_b = openingBrackets.index(ob)
-        cb = closingBrackets[ind_b]
+        ind_b = opening_brackets.index(ob)
+        cb = closing_brackets[ind_b]
         opening = inp.find(ob, len(text.get("1.0", "insert")))
         closing = inp.find(cb, opening)
         if closing != -1:
             backgroundTheBrackets(opening, closing)
 
-    elif text.get("insert", "insert" + "+1c") in closingBrackets:
+    elif text.get("insert", "insert" + "+1c") in closing_brackets:
         cb = text.get("insert", "insert" + "+1c")
-        ind_b = closingBrackets.index(cb)
-        ob = openingBrackets[ind_b]
+        ind_b = closing_brackets.index(cb)
+        ob = opening_brackets[ind_b]
         closing = inp.find(cb, len(text.get("1.0", "insert")))
         opening = inp.rfind(ob, 0, closing)
         if opening != -1:
