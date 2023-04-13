@@ -1,7 +1,6 @@
 import tkinter as tk
 from tkinter.filedialog import askdirectory
 import files
-import output
 
 master = None
 

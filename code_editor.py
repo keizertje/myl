@@ -2,9 +2,8 @@ from tkinter import ttk
 from tkinter import *
 from tkinter.filedialog import askopenfilename
 import tkinter.messagebox as alert
-from coloring import color  # self-made
+from coloring import Color  # self-made
 from threading import Thread
-import execute  # self-made
 import files  # self-made
 import settings  # self-made
 from console import Console
@@ -22,7 +21,7 @@ class App(Tk):
         super(App, self).__init__()
 
         # set the global master variables in other files
-        execute.master = self; files.master = self; settings.master = self
+        files.master = self; settings.master = self
 
         # set title
         self.title("python IDE")
@@ -36,7 +35,7 @@ class App(Tk):
         self.levels = [0]
         self.border = {"highlightbackground": "#bbb", "highlightthickness": "1px", "highlightcolor": "#bbb", "relief": FLAT}
         self.common_entry_arguments = {**self.border, "font": 'arial 11', "selectbackground": "#acf", "selectforeground": "#000"}
-        self.common_text_arguments = {**self.common_entry_arguments, "wrap": NONE}
+        self.common_text_arguments = {**self.common_entry_arguments, "wrap": NONE, "tabs": "16"}
 
         # automatic header updates a. o.
         self.state.trace_add("write", callback=lambda *args, **kwargs: self.__update_filename())
@@ -75,10 +74,6 @@ class App(Tk):
         self.settings = ttk.Button(self.top, text="settings", command=lambda: settings.opensettings())
         self.name = Entry(self.top, **self.common_entry_arguments)
 
-        # search
-        self.search_frame = Frame(self, **self.border)
-        self.search_entry = Entry(self.search_frame, **self.common_entry_arguments)
-
         # bottom info
         self.bottom = Frame(self, **self.border)
         self.indexer = Label(self.bottom, text="1:1")
@@ -111,12 +106,7 @@ class App(Tk):
         self.settings.pack(side=RIGHT, padx=5, ipadx=10)
         self.name.pack(side=RIGHT, padx=5, ipadx=20)
 
-        # search
-        self.search_frame.pack(fill=X, padx=10, pady=10)
-        self.search_entry.pack(side=LEFT, padx=2, pady=2)
-
         # **bindings and hotkeys**
-        self.input.bind("<KeyRelease>", lambda e: self.afterKeyPress(e))
         self.input.bind("<Key>", lambda e: self.onKeyPress(e))
         self.input.bind_all("<Control-Return>", lambda e: [self.set_input(self.get_input()[:-1]), self.run.invoke()])
         self.input.bind_all("<Escape>", lambda e: self.exit.invoke())
@@ -125,7 +115,6 @@ class App(Tk):
         self.input.bind_all("<Control-z>", lambda e: self.input.edit_undo())
         self.input.bind_all("<Control-y>", lambda e: self.input.edit_redo())
         self.input.bind_all("<Control-n>", lambda e: App().mainloop())
-        self.search_entry.bind("<KeyRelease>", lambda e: self.search())
 
         self.input.focus()
         self.loop()
@@ -141,7 +130,8 @@ class App(Tk):
         if self.state.get() == "unsaved" and self.newfile.get() == "old":
             if alert.askquestion(title="save now?", message="your code is unsaved! save now?") == alert.YES:
                 self.savefile()
-        chosen = askopenfilename(filetypes=[("Python files", ".py"), ("All files", "")], initialdir=files.userdir + "/python files").split("/")[-1].split(".")[0]
+        chosen = askopenfilename(filetypes=[("Python files", ".py"), ("All files", "")], initialdir=files.userdir + "/python files")
+        chosen = chosen.split("/")[-1].split(".")[0]
         self.file.set(chosen)
         if files.openfile(chosen)[1]:
             self.state.set("saved")
@@ -150,7 +140,7 @@ class App(Tk):
         else:
             self.file.set("")
             self.state.set("unsaved")
-        color(self.input)
+        Color(self.input)
 
     def set_input(self, content):
         self.input.delete("1.0", END)
@@ -160,28 +150,22 @@ class App(Tk):
         return self.input.get("1.0", END + "-1c")
 
     def onKeyPress(self, e=None):
+        self.state.set("saved" if self.lastsavedtext.get() == self.get_input() else "unsaved")
         if e is not None:
             if e.keysym == "Up" and self.input.index(INSERT).split(".")[0] == "1":
                 self.input.mark_set(INSERT, "1.0")
             if e.keysym == "Down" and self.input.index(INSERT).split(".")[0] == self.input.index(END + "-1c").split(".")[0]:
                 self.input.mark_set(INSERT, END + "-1c")
 
-    def afterKeyPress(self, e=None):
-        if e is not None:
-            if e.keysym == "Tab":
-                self.input.delete(INSERT + "-1c", INSERT)
-                self.input.insert(INSERT, "    ")
-        self.state.set("saved" if self.lastsavedtext.get() == self.get_input() else "unsaved")
-
     def savefile(self):
         if self.state.get() == "unsaved":
             files.create(self.name.get(), self.get_input())
             self.lastsavedtext.set(self.get_input())
-        color(self.input)
+        Color(self.input)
 
     def loop(self):
-        # colors
-        color(self.input)
+        # Colors
+        Color(self.input)
 
         # indexer in the bottom
         index = self.input.index(INSERT).split(".")

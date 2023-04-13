@@ -1,152 +1,102 @@
 from keyword import kwlist
 import builtins
+from tkinter import Text
+from typing import Callable, Any
 
 
-def findOccurrences(s, lst: list = None, word: bool = True):
-    if lst is None:
-        lst = []
-    end = 0
-    out = []
-    if word:
-        for i in lst:
-            end = 0
-            while True:
-                start = s.find(i, end)
-                end = start + len(i)
-                if start == -1:
-                    break
-                else:
-                    checks = []
-                    if start != 0:
-                        checks.append(s[start - 1].isidentifier() or s[start - 1].isnumeric())
-                    if end != len(s):
-                        checks.append(s[end].isidentifier())
-                    if True not in checks:
-                        out.append((start, end))
-    else:
-        for j in s:
-            if j in lst:
-                end = s.index(j, end) + 1
-                out.append((end - 1, end))
-    return out
+class Color:
+    indextype = list[int | tuple[int, int]]
+    isending: Callable[[Any, str, int, int], bool] = lambda self, string, start, end: not (((string[start - 1].isidentifier()) if (start != 0) else False) or
+                                                                                           ((string[end].isidentifier()) if (end != len(string)) else False))
+    findWords: Callable[[Any, str, str], indextype] = lambda self, s, w: [(i, i + len(w)) for i, v in enumerate(s) if s[i:i + len(w)] == w and self.isending(s, i, i + len(w))]
+    to_index: Callable[[Any, int], str] = lambda self, i: f"1.0+{i}c"
 
+    def __init__(self, text: Text) -> None:
+        self.text: Text = text
+        self.inp: str = self.text.get("1.0", "end-1c")
 
-findFirstWordstop = lambda s: len(s.split(" ")[0].split("(")[0].split(")")[0].split("#")[0].split(":")[0])
+        self.ignore: Color.indextype = []
+        self.strings: Color.indextype = []
+        self.comments: Color.indextype = []
+        self.numbers: Color.indextype = []
+        self.builtins: Color.indextype = []
+        self.keywords: Color.indextype = []
+        self.names: Color.indextype = []
+        self.todo: Color.indextype = []
+        self.errors: Color.indextype = []
 
+        self.types: dict[str] = {"strings": {"foreground": "#db0"}, "comments": {"foreground": "#a87", "font": "arial 11 italic"}, "numbers": {"foreground": "#f40"}, "builtins": {"foreground": "#e81"}, "keywords": {"foreground": "#f93"}, "errors": {"background": "#fcc", "foreground": "#f00"}, "todo": {"foreground": "#ee0"}, "names": {"foreground": "#750"}}
+        self.types_list: list[str] = list(self.types.keys())
 
-def color(text):
-    for tag in text.tag_names():
-        text.tag_delete(tag)
+        self.in_double_string: bool = False
+        self.in_single_string: bool = False
+        self.in_comment: bool = False
+        self.dont_check: bool = False
 
-    inp = text.get("1.0", "end-1c")
-    count = 0
+        self.str_int_comment()
+        self.builtins_keywords()
+        self.add_tags()
 
-    # numbers
-    lst = findOccurrences(inp, ["1", "2", "3", "4", "5", "6", "7", "8", "9", "0"], word=False)
-    for i in lst:
-        text.tag_add(str(count), f"1.0+{i[0]}c", f"1.0+{i[1]}c")
-        text.tag_config(str(count), foreground="blue")
-        count += 1
+        for i in self.types_list:
+            self.text.tag_config(i, **self.types[i])
 
-    # comments
-    lst = findOccurrences(inp, ["#"], word=False)
-    for i in lst:
-        text.tag_add(str(count), f"1.0+{i[0]}c", f"1.0+{i[1]}c lineend")
-        text.tag_config(str(count), foreground="grey", font="arial 11 italic")
-        count += 1
-        if "TODO" in text.get(f"1.0+{i[1]}c", f"1.0+{i[1]}c lineend"):
-            text.tag_add(str(count), f"1.0+{inp.index('TODO', i[1])}c", f"1.0+{inp.index('TODO', i[1])}c lineend")
-            text.tag_config(str(count), foreground="#55AAFF")
-            count += 1
+    def add_tag(self, name: str, start: int, end: int):
+        self.text.tag_add(name, self.to_index(start), self.to_index(end))
 
-    # builtin keywords
-    lst = findOccurrences(inp, list(kwlist))
-    for j in lst:
-        text.tag_add(str(count), f"1.0+{j[0]}c", f"1.0+{j[1]}c")
-        text.tag_config(str(count), foreground="#cb0", font="arial 11 bold")
-        count += 1
+    def add_tags(self):
+        for i in self.text.tag_names():
+            self.text.tag_delete(i)
+        for i in self.types_list:
+            items = self.__getattribute__(i)
+            for j in items:
+                if type(j) == int:
+                    self.add_tag(i, j, j + 1)
+                elif type(j) == tuple:
+                    self.add_tag(i, j[0], j[1])
 
-    # builtin functions
-    lst = findOccurrences(inp, dir(builtins))
-    for j in lst:
-        text.tag_add(str(count), f"1.0+{j[0]}c", f"1.0+{j[1]}c")
-        text.tag_config(str(count), foreground="#cb0", font="arial 11 bold")
-        count += 1
+    def str_int_comment(self):
+        for i, v in enumerate(self.inp):
+            if v == '"' and not self.in_comment and not self.in_single_string:
+                self.in_double_string = not self.in_double_string
+                if not self.in_double_string:
+                    self.strings.append(i)
+            elif v == "'" and not self.in_comment and not self.in_double_string:
+                self.in_single_string = not self.in_single_string
+                if not self.in_single_string:
+                    self.strings.append(i)
+            elif v == "#" and not self.in_double_string and not self.in_single_string:
+                self.in_comment = True
+            elif self.in_comment and v == "\n":
+                self.in_comment = False
 
-    # strings option 1
-    lst = findOccurrences(inp, ['"'], word=False)
-    while not len(lst) < 1:
-        if len(lst) == 1:
-            text.tag_add(str(count), f"1.0+{lst[0][0]}c", f"1.0+{lst[0][1]}c lineend")
-            text.tag_config(str(count), foreground="green", font="arial 11")
-            del lst[0]
-        else:
-            text.tag_add(str(count), f"1.0+{lst[0][0]}c", f"1.0+{lst[1][1]}c")
-            text.tag_config(str(count), foreground="green", font="arial 11")
-            del lst[0], lst[0]
-        count += 1
+            if self.in_comment or self.in_single_string or self.in_double_string:
+                self.ignore.append(i)
 
-    # strings option 2
-    lst = findOccurrences(inp, ["'"], word=False)
-    while not len(lst) <= 1:
-        text.tag_add(str(count), f"1.0+{lst[0][0]}c", f"1.0+{lst[1][1]}c")
-        text.tag_config(str(count), foreground="green", font="arial 11")
-        del lst[0], lst[0]
-        count += 1
+            if self.in_comment:
+                self.comments.append(i)
+            elif self.in_double_string or self.in_single_string:
+                self.strings.append(i)
+                if i == len(self.inp) - 1:
+                    self.errors.append(i)
+            elif v in [str(j) for j in range(10)]:
+                self.numbers.append(i)
 
-    # names of function and class definition
-    lst = findOccurrences(inp, ["def", "class"])
-    for i in lst:
-        line = text.get(f"1.0+{i[1]}c", f"1.0+{i[1]}c lineend").split(" ")
-        for j in line:
-            if len(j) > 0:
-                if j[0].isalpha() or j[0] == "_":
-                    text.tag_add(str(count), f"1.0+{inp.index(j, i[1])}c", f"1.0+{inp.index(j, i[1])+len(j[0:findFirstWordstop(j)])}c")
-                    text.tag_config(str(count), foreground="#f77")
-                    count += 1
-                break
-
-    opening_brackets = ['(', '[', '{']
-    closing_brackets = [')', ']', '}']
-
-    def backgroundTheBrackets(opening, closing):
-        text.tag_add("opening bracket", f"1.0+{opening}c", f"1.0+{opening + 1}c")
-        text.tag_add("closing bracket", f"1.0+{closing}c", f"1.0+{closing + 1}c")
-        text.tag_config("opening bracket", background="#acf")
-        text.tag_config("closing bracket", background="#acf")       
-
-    if text.get("insert" + "-1c", "insert") in opening_brackets:
-        ob = text.get("insert" + "-1c", "insert")
-        ind_b = opening_brackets.index(ob)
-        cb = closing_brackets[ind_b]
-        opening = inp.find(ob, len(text.get("1.0", "insert")) - 1)
-        closing = inp.find(cb, opening)
-        if closing != -1:
-            backgroundTheBrackets(opening, closing)
-
-    elif text.get("insert" + "-1c", "insert") in closing_brackets:
-        cb = text.get("insert" + "-1c", "insert")
-        ind_b = closing_brackets.index(cb)
-        ob = opening_brackets[ind_b]
-        closing = inp.find(cb, len(text.get("1.0", "insert")) - 1)
-        opening = inp.rfind(ob, 0, closing)
-        if opening != -1:
-            backgroundTheBrackets(opening, closing)
-
-    elif text.get("insert", "insert" + "+1c") in opening_brackets:
-        ob = text.get("insert", "insert" + "+1c")
-        ind_b = opening_brackets.index(ob)
-        cb = closing_brackets[ind_b]
-        opening = inp.find(ob, len(text.get("1.0", "insert")))
-        closing = inp.find(cb, opening)
-        if closing != -1:
-            backgroundTheBrackets(opening, closing)
-
-    elif text.get("insert", "insert" + "+1c") in closing_brackets:
-        cb = text.get("insert", "insert" + "+1c")
-        ind_b = closing_brackets.index(cb)
-        ob = opening_brackets[ind_b]
-        closing = inp.find(cb, len(text.get("1.0", "insert")))
-        opening = inp.rfind(ob, 0, closing)
-        if opening != -1:
-            backgroundTheBrackets(opening, closing)
+    def builtins_keywords(self):
+        builtin_f = dir(builtins)
+        keywords = list(kwlist)
+        for i in builtin_f:
+            usages = self.findWords(self.inp, i)
+            for j in usages:
+                if j[0] not in self.ignore:
+                    self.builtins.append(j)
+        for k in keywords:
+            usages = self.findWords(self.inp, k)
+            for l in usages:
+                if l[0] not in self.ignore:
+                    self.keywords.append(l)
+                    if k == "def" or k == "class":
+                        line = self.text.get(self.to_index(l[0]), self.to_index(l[0]) + " lineend")
+                        bracket = line.find("("); double_point = line.find(":")
+                        veel = len(line)
+                        end = l[0] + min(bracket if bracket != -1 else veel, double_point if double_point != -1 else veel)
+                        self.names.append((l[1], end))

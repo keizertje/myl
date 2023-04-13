@@ -45,8 +45,7 @@ class Console(Frame):
 
     def stdout(self, chars: str) -> None:
         self.output.config(state="normal")
-        print(chars)
-        self.output.config("1.0", END + "-1c", chars)
+        self.output.insert("end", chars)
         self.output.config(state="disabled")
 
     def stderr(self, chars):
@@ -63,7 +62,7 @@ class Console(Frame):
             self.process = None
         while True:
             if self.process is None:
-                self.process = sp.Popen(["C:/Users/Gebruiker/AppData/Local/Programs/Python/Python39/python.exe", files.userdir + "/python files/" + name + ".py"],
+                self.process = sp.Popen(["python", files.userdir + "/python files/" + name + ".py"],
                                         stdout=open("stdout.txt", "w"),
                                         stderr=open("stderr.txt", "w"),
                                         stdin=sp.PIPE,
@@ -72,19 +71,13 @@ class Console(Frame):
                 self.last_stderr_length = 0
             if self.process is not None:
                 if self.process.poll() is None:
-                    # self.out, self.err = (self.process.stdout.readlines()[-1], self.process.stderr.readlines()[-1])
-                    # print(self.out)
-                    # # err = stderr[1].read()
-                    # self.new_stdout = self.out[self.last_stdout_length:]
-                    # # new_stderr = err[last_stderr_length:]
-                    # self.last_stdout_length = len(self.out)
-                    # # last_stderr_length = len(err)
-                    # self.stdout(self.new_stdout)
-                    # # master.ins_cons(new_stderr, err=True)
                     with open("stdout.txt") as f:
-                        self.stdout(f.read())
+                        self.stdout(f.read()[self.last_stdout_length:])
+                        self.last_stdout_length = len(f.read())
+                        print("one iteration")
                 else:
                     break
         self.stdout(f"Process finished with exit code {self.process.poll()}\n")
         self.last_stdout_length = 0
         self.last_stderr_length = 0
+        print("end")
