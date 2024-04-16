@@ -1,7 +1,7 @@
 from tkinter import *
 from tkinter import ttk
-import subprocess as sp
 import files
+from execute import Execute
 
 
 class Console(Frame):
@@ -16,12 +16,17 @@ class Console(Frame):
     new_stdout = ""
     new_stderr = ""
 
-    def __init__(self):
-        """console for seeing output a. o. First, you have to set the master attribute!"""
+    def __init__(self, **kwargs):
+        """console for seeing output a. o. You have to set the master attribute!"""
         super(Console, self).__init__()
+        
+        for k, v in kwargs.items():
+            self.__setattr__(k, v)
+
+        self.executer = Execute(self)
 
         self.btns_frame = Frame(self, **self.border)
-        self.btns_clear = ttk.Button(self.btns_frame, text="erase", command=lambda: self.master.del_cons())
+        self.btns_clear = ttk.Button(self.btns_frame, text="erase", command=lambda: self.erase())
         self.output = Text(self, **self.common_text_arguments, state="disabled", height=10)
         self.vscroll = Scrollbar(self, orient="vertical", command=self.output.yview)
         self.hscroll = Scrollbar(self, orient="horizontal", command=self.output.xview)
@@ -36,48 +41,25 @@ class Console(Frame):
         self.output.pack(side=LEFT, fill=BOTH, expand=True)
         self.vscroll.pack(side=LEFT, fill=Y)
 
-        self.input.bind("<Return>", lambda e: self.stdin())
+        self.input.bind("<Return>", lambda e: self.handle_input())
 
-    def stdin(self):
-        self.stdout(self.input.get() + "\n")
-        self.process.communicate(input=self.input.get() + "\n")
-        self.input.delete("0", END)
-
-    def stdout(self, chars: str) -> None:
-        self.output.config(state="normal")
-        self.output.insert("end", chars)
-        self.output.config(state="disabled")
-
-    def stderr(self, chars):
-        self.stdout(chars)
+    def write(self, __s):
+        self.output["state"] = "normal"
+        self.output.insert(END, __s)
+        self.output["state"] = "disabled"
 
     def erase(self):
-        print("erase is called")
+        self.output["state"] = "normal"
         self.output.delete("1.0", END)
+        self.output["state"] = "disabled"
 
-    def run(self, name):
-        print(f"run is called. name={name}")
-        if self.process is not None:
-            self.process.kill()
-            self.process = None
-        while True:
-            if self.process is None:
-                self.process = sp.Popen(["python", files.userdir + "/python files/" + name + ".py"],
-                                        stdout=open("stdout.txt", "w"),
-                                        stderr=open("stderr.txt", "w"),
-                                        stdin=sp.PIPE,
-                                        text=True)
-                self.last_stdout_length = 0
-                self.last_stderr_length = 0
-            if self.process is not None:
-                if self.process.poll() is None:
-                    with open("stdout.txt") as f:
-                        self.stdout(f.read()[self.last_stdout_length:])
-                        self.last_stdout_length = len(f.read())
-                        print("one iteration")
-                else:
-                    break
-        self.stdout(f"Process finished with exit code {self.process.poll()}\n")
-        self.last_stdout_length = 0
-        self.last_stderr_length = 0
-        print("end")
+    def handle_input(self):
+        if self.executer.is_running:
+            text = self.input.get()
+            self.input.delete(0, END)
+            self.write(text + "\n")
+
+            self.executer.send_input(text + "\n")
+
+    def run(self, name: str):
+        self.executer.start("python \"" + files.pythonfilesdir + name + ".py\"")

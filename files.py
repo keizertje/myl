@@ -1,6 +1,6 @@
 import os
-from tkinter.filedialog import asksaveasfilename, YES
-from tkinter.messagebox import askquestion
+from tkinter.filedialog import asksaveasfilename
+from tkinter.messagebox import askquestion, YES
 
 userdir = os.path.expanduser("~")
 pythonfilesdir = userdir + "\\python files\\"
